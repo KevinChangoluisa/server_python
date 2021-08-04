@@ -1,49 +1,64 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Aug  3 16:39:40 2021
-
-@author: kchan
-"""
-
-import pymongo
+from pymongo import MongoClient
 import pandas as pd
-from flask import Flask, request, redirect
+from flask import Flask, request, redirect,jsonify
+from flask_cors import CORS, cross_origin
 import json
+
 app = Flask(__name__)
+CORS(app, support_credentials=True)
 #settings
 app.secret_key = "mysecretkey"
-client = pymongo.MongoClient("mongodb+srv://probeapk:1718123563@cluster0.ydel3.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
+client = MongoClient("mongodb+srv://probeapk:1718123563@cluster0.ydel3.mongodb.net/<>?retryWrites=true&w=majority")
 db = client.probeapk
-collection = db.usuarios
 
 def cargarData(datos):
-    dato=json.loads(datos)
-    collection.insert_one(dato)
-          
+	collection = db.encuestas
+	dato=json.loads(datos)
+	collection.insert_one(dato)
 
-def consultartrabajo():  
-    #collection.insert_one({"cedulaEncuestador": "1718121111","cedulaSupervisor": "1718123563","fecha":"03/08/2021"})
-    data = pd.DataFrame(list(collection.find()))
+def buscarUsuario(cedula,password):
+	collection=db.usuarios
+	role=collection.find_one({"cedula":cedula,"password":password})
+	if(role!=None):
+		return role['nombre'],role['apellido'],role['role']
+	else:
+		role="null"
+		return role
 
-@app.route('/', methods=["GET","POST"])
-def Index():
-    if request.method == 'POST':
-       pass
- 
+def contarTrabajo(cedula,fecha):
+	collection=db.encuestas
+	x=collection.find({'cedEnc':cedula,'fecha':fecha})
+	x=list(x)
+	x=len(x)
+	return x
+
+
 @app.route('/query-example', methods=["POST"])
+@cross_origin(supports_credentials=True)
 def query_example():
-    print((request.data).decode('utf-8'))
     # if key doesn't exist, returns None
-    #cargarData((request.data).decode('utf-8'))
-	
+    cargarData((request.data).decode('utf-8'))
     return 'exitoso'
-    
+
+@app.route('/obtenerRol', methods=["Get"])
+@cross_origin(supports_credentials=True)
+def obtenerRol():
+    # if key doesn't exist, returns None
+	cedula = request.args.get('cedula')
+	password = request.args.get('password')
+	nombre,apellid,role=buscarUsuario(cedula,password)
+	print(role)
+	return jsonify({'nombre':nombre,'apellido':apellid,'role':role})
+
+@app.route('/obtenerTotTrab', methods=["Get"])
+@cross_origin(supports_credentials=True)
+def obtenerTotTrab():
+    # if key doesn't exist, returns None
+	cedula = request.args.get('cedula')
+	fecha = request.args.get('fecha')
+	total=contarTrabajo(cedula,fecha)
+	print(total)
+	return jsonify({'total':total})
 
 
-if __name__ == "__main__":
-	app.run(debug=True)
-
-    
-
-
-
+app.run('0.0.0.0',8080)
