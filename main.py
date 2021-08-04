@@ -32,8 +32,10 @@ def Index():
  
 @app.route('/query-example', methods=["POST"])
 def query_example():
+    print((request.data).decode('utf-8'))
     # if key doesn't exist, returns None
-    cargarData((request.data).decode('utf-8'))
+    #cargarData((request.data).decode('utf-8'))
+	
     return 'exitoso'
     
 
