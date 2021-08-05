@@ -4,6 +4,7 @@ from flask import Flask, request, redirect,jsonify
 from flask_cors import CORS, cross_origin
 import json
 
+
 app = Flask(__name__)
 CORS(app, support_credentials=True)
 #settings
